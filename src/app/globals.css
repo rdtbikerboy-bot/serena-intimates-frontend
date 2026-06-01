@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@theme {
+  /* Paleta cromática Serena Intimates */
+  --color-serena-silk: #FAF6F0;       /* Base Nude */
+  --color-serena-cream: #FFFDF9;      /* Fondo de tarjetas, drawers */
+  --color-serena-gold: #D4A373;       /* Acento Rose Gold */
+  --color-serena-blush: #EAD5C3;      /* Bordes y hovers */
+  --color-serena-charcoal: #1A1512;   /* Texto de alta legibilidad (Warm Black) */
+  --color-serena-champagne: #E9D8A6;  /* Exclusividad y compatibilidad */
+  
+  /* Fuentes editoriales y de UI */
+  --font-editorial: var(--font-playfair), serif;
+  --font-ui: var(--font-outfit), sans-serif;
+  
+  /* Redefinición de default */
+  --color-background: var(--color-serena-silk);
+  --color-foreground: var(--color-serena-charcoal);
+}
+
+:root {
+  --background: #FAF6F0;
+  --foreground: #1A1512;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-outfit), sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Custom Scrollbar optimizado y ultraligero */
+.custom-scroll::-webkit-scrollbar {
+  height: 4px;
+  width: 4px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: #EAD5C3;
+  border-radius: 10px;
+}
+
+/* Transiciones aceleradas por hardware GPU */
+.smooth-transition {
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease-out;
+  will-change: transform, opacity;
+}
+
+/* Pulsación sutil y fluida para el botón de conversión principal */
+@keyframes sutil-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.01); }
+}
+.pulse-btn {
+  animation: sutil-pulse 3s infinite ease-in-out;
+}
+
+/* Animación de Respiración de Seda Serena */
+@keyframes breath {
+  0%, 100% { opacity: 0.78; filter: brightness(0.98); }
+  50% { opacity: 0.98; filter: brightness(1.02); }
+}
+.animate-breath {
+  animation: breath 4s infinite ease-in-out;
+}
+
+/* Efecto de Desenfoque Satinado Premium (Backdrop Filter) */
+.satin-backdrop {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
