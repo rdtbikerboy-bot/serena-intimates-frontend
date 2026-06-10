@@ -1,41 +1,22 @@
 // src/services/checkoutPersistenceService.ts
 "use client";
 
-import { supabase, isSupabaseConfigured } from "@/services/supabase";
+import { supabase } from "@/services/supabase";
 import { serenaLogger } from "@/core/logger";
 
 /**
- * Payload shape that will be stored in Supabase `orders` table.
+ * Persists an order to Supabase.
+ * This layer is solely responsible for the infrastructure call.
+ * No ID generation, no fallback, no business validation.
  */
-export interface OrderPayload {
-  name: string;
-  phone: string;
-  city: string;
-  items: Array<{
-    id: string;
-    title: string;
-    size: string;
-    quantity: number;
-    price: number;
-  }>;
-  subtotal: number;
-  created_at: string; // ISO timestamp
-}
-
-/**
- * Persist an order in Supabase.
- * This is fire‑and‑forget: errors are logged but never block the checkout flow.
- */
-export async function persistOrder(payload: OrderPayload): Promise<void> {
-  if (!isSupabaseConfigured()) {
-    serenaLogger.warn("Supabase not configured – skipping order persistence");
-    return;
-  }
+export async function persistOrder(payload: any): Promise<any> {
   try {
-    await supabase.from("orders").insert([payload]);
-    serenaLogger.info("Order tracking saved to Supabase", { payload });
+    const { data, error } = await supabase.from("orders").insert([payload]).select();
+    if (error) throw error;
+    serenaLogger.info("Order persisted to Supabase", { orderId: data?.[0]?.id ?? payload.id });
+    return data?.[0] ?? payload;
   } catch (err) {
-    // Do NOT rethrow – checkout must continue.
-    serenaLogger.error("Supabase order tracking failed", err as Error);
+    serenaLogger.error("Supabase order persistence failed", err as Error);
+    throw err; // let caller decide fallback
   }
 }

@@ -14,7 +14,7 @@ import { create } from "zustand";
  * - `confirming` : user reviews info message (step 3) / final confirmation (step 4)
  * - `processing` : sending WhatsApp link, persisting order, etc.
  */
-export type CheckoutStatus = "idle" | "editing" | "confirming" | "processing";
+export type CheckoutStatus = "idle" | "editing" | "confirming" | "processing" | "sending" | "intent_completed";
 
 interface CheckoutState {
   // Wizard step (1-4)

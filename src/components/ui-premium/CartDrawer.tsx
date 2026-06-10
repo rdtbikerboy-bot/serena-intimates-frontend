@@ -17,13 +17,14 @@ export function CartDrawer() {
   const setCartOpen = useUIStore((state) => state.setCartOpen);
 
   // Cart store – items and actions
-  const { cartItems, removeItem, clearCart } = useCartStore((state) => ({
-    cartItems: state.cartItems,
-    removeItem: state.removeItem,
-    clearCart: state.clearCart,
-  }));
+  const cartItems = useCartStore(state => state.cartItems);
+  const removeItem = useCartStore(state => state.removeItem);
+  const clearCart = useCartStore(state => state.clearCart);
 
-  const subtotal = useCartStore(state => state.getSubtotal());
+  // Subtotal calculated directly from cart items (no getSubtotal selector)
+  const subtotal = cartItems.reduce((acc, i) => acc + i.price * i.quantity, 0);
+
+  const router = useRouter();
 
   // Close drawer helper
   const closeDrawer = () => setCartOpen(false);

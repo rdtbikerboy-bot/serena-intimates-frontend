@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 import { useCartStore } from "@/store/useCartStore";
 import { useUIStore } from "@/store/useUIStore";

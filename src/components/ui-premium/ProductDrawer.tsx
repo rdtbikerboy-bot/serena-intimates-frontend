@@ -38,13 +38,14 @@ export function ProductDrawer({ product, onClose }: ProductDrawerProps) {
     return getCompleteTheLookRecommendations(product, catalog);
   }, [product, catalog]);
 
+  // Track impression only when recommendations or product changes
   React.useEffect(() => {
     if (recommendations.length > 0 && product) {
       useFunnelStore.getState().trackEvent("CTL_IMPRESSION", product.id, undefined, {
-        recommended: recommendations.map(r => r.id)
+        recommended: recommendations.map(r => r.id),
       });
     }
-  }, [product?.id, recommendations.length]);
+  }, [product?.id, recommendations]);
 
   React.useEffect(() => {
     if (!product) {

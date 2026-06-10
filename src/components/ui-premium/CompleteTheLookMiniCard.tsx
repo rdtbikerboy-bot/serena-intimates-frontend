@@ -17,7 +17,7 @@ export function CompleteTheLookMiniCard({ product, onClick }: CompleteTheLookMin
     >
       <div className="relative aspect-[4/5] bg-[#F0E8E0] overflow-hidden">
         <ImageLoader 
-          src={product.images?.find(img => img.isCover)?.imageUrl || product.images?.[0]?.imageUrl || product.imageUrl} 
+          src={product.imageUrl} 
           alt={product.title} 
           className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
         />
