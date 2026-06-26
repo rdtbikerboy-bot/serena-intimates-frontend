@@ -1,75 +1,69 @@
 // src/infrastructure/order/localOrder.repository.ts
-import { Order } from '@/domain/order/order.entity';
-import { OrderRepository } from '@/domain/order/order.repository';
-import { OrderStatus } from '@/domain/order/order.valueObjects';
-import { serenaLogger } from '@/core/logger';
-import { OrderReconstructor } from '@/infrastructure/order/reconstruction/orderReconstructor';
+
+import { OrderRepository } from "@/domain/order/order.repository";
+import { Order } from "@/domain/order/order.entity";
+import { fromSupabase, toSupabase } from "./order.mapper";
 
 /**
- * Offline repository that persists orders to localStorage.
- * No Supabase involvement.
+ * Repositorio de Infraestructura Local (Fallback/Mocks de almacenamiento).
+ * Almacena las órdenes temporalmente en memoria o localStorage para pruebas ágiles.
+ * Implementa estrictamente el contrato OrderRepository para respetar SOLID.
  */
 export class LocalOrderRepository implements OrderRepository {
-  private readonly storageKey = 'serena_orders_offline';
+  private memoryStorage: Map<string, any> = new Map();
 
   async insert(order: Order): Promise<Order> {
-    try {
-      const existingRaw = typeof window !== 'undefined' ? localStorage.getItem(this.storageKey) : null;
-      const existing: Order[] = existingRaw ? JSON.parse(existingRaw) : [];
-      existing.push(order);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(this.storageKey, JSON.stringify(existing));
-      }
-      serenaLogger.info('Order inserted to localStorage (offline)', { orderId: order.id });
-    } catch (e) {
-      serenaLogger.error('Failed to insert order locally', e as Error);
+    const record = toSupabase(order);
+    this.memoryStorage.set(order.id, record);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`serena_order_${order.id}`, JSON.stringify(record));
     }
     return order;
   }
-  // Deprecated save method removed
 
-  private async loadAll(): Promise<Order[]> {
-    if (typeof window === 'undefined') return [];
-    const raw = localStorage.getItem(this.storageKey);
-    const plain = raw ? JSON.parse(raw) : [];
-    
-    // Use reconstructor to hydrate domain entities
-    const reconstructor = new OrderReconstructor();
-    return plain.map((obj: any) => reconstructor.fromPlainObject(obj));
-  }
   async update(order: Order): Promise<Order> {
-    const existingRaw = typeof window !== 'undefined' ? localStorage.getItem(this.storageKey) : null;
-    const existing: Order[] = existingRaw ? JSON.parse(existingRaw) : [];
-    const index = existing.findIndex(o => o.id === order.id);
-    if (index === -1) {
-      throw new Error(`Order ${order.id} not found`);
+    const record = toSupabase(order);
+    this.memoryStorage.set(order.id, record);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`serena_order_${order.id}`, JSON.stringify(record));
     }
-    existing[index] = order;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(this.storageKey, JSON.stringify(existing));
-    }
-    serenaLogger.info('Order updated in localStorage (offline)', { orderId: order.id });
     return order;
   }
 
   async findById(id: string): Promise<Order | null> {
-    const all = await this.loadAll();
-    return all.find(o => o.id === id) ?? null;
+    let record = this.memoryStorage.get(id);
+    if (!record && typeof window !== "undefined") {
+      const persisted = localStorage.getItem(`serena_order_${id}`);
+      if (persisted) record = JSON.parse(persisted);
+    }
+    return record ? fromSupabase(record) : null;
   }
 
-  async findByCommercialCode(code: string): Promise<Order | null> {
-    const all = await this.loadAll();
-    return all.find(o => o.commercialOrderCode === code) ?? null;
+  /**
+   * Satisface el contrato unificado recuperando todos los registros locales persistidos.
+   */
+  async findAll(): Promise<Order[]> {
+    const orders: Order[] = [];
+
+    // Recuperar elementos en memoria volátil
+    for (const record of this.memoryStorage.values()) {
+      orders.push(fromSupabase(record));
+    }
+
+    // Si la memoria está vacía, intentar hidratar desde localStorage del navegador
+    if (orders.length === 0 && typeof window !== "undefined") {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("serena_order_")) {
+          const persisted = localStorage.getItem(key);
+          if (persisted) {
+            orders.push(fromSupabase(JSON.parse(persisted)));
+          }
+        }
+      }
+    }
+
+    // Retornar ordenados por fecha de creación (los más recientes primero)
+    return orders.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
-
-  async list(): Promise<Order[]> {
-    return this.loadAll();
-  }
-
-  async listByStatus(status: OrderStatus): Promise<Order[]> {
-    const all = await this.loadAll();
-    return all.filter(o => o.status === status);
-  }
-
-
 }

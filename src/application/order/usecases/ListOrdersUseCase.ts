@@ -1,21 +1,17 @@
 // src/application/order/usecases/ListOrdersUseCase.ts
 
 import { OrderRepository } from '@/domain/order/order.repository';
+import { Order } from '@/domain/order/order.entity';
 
+/**
+ * Caso de Uso de Aplicación: Recuperación integral del historial de órdenes.
+ * Garantiza contratos fuertemente tipados eliminando casteos de tipo 'any'.
+ */
 export class ListOrdersUseCase {
-  constructor(private readonly repository: OrderRepository) {}
+  constructor(private readonly repository: OrderRepository) { }
 
-  /**
-   * Returns a list of orders.
-   * The concrete repository may expose a `findAll` method; we invoke it via a safe cast.
-   */
-  async execute(): Promise<any[]> {
-    // Minimal patch: repository interface only defines `save`, so we use a runtime check.
-    const repoAny = this.repository as any;
-    if (typeof repoAny.findAll === 'function') {
-      return await repoAny.findAll();
-    }
-    // Fallback – empty array to keep compilation safe.
-    return [];
+  async execute(): Promise<Order[]> {
+    // Nota: El contrato en order.repository debe exponer `findAll()` oficialmente para evitar deuda técnica.
+    return await this.repository.findAll();
   }
 }

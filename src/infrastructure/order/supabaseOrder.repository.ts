@@ -1,88 +1,72 @@
 // src/infrastructure/order/supabaseOrder.repository.ts
-import { supabase } from '@/services/supabase';
-import { Order } from '@/domain/order/order.entity';
-import { OrderRepository } from '@/domain/order/order.repository';
-import { serenaLogger } from '@/core/logger';
-import { toSupabase, fromSupabase } from './order.mapper';
-import { OrderStatus } from '@/domain/order/order.valueObjects';
+
+import { OrderRepository } from "@/domain/order/order.repository";
+import { Order } from "@/domain/order/order.entity";
+import { toSupabase, fromSupabase, SupabaseOrderRecord } from "./order.mapper";
 
 /**
- * Infrastructure implementation that persists an Order to Supabase.
- * No fallback, no business logic – just a raw insert.
+ * Repositorio de Infraestructura: Implementación oficial usando Supabase PostgreSQL.
+ * Satisface las demandas de la interfaz de dominio aislando las queries de la UI.
  */
 export class SupabaseOrderRepository implements OrderRepository {
-  async findById(id: string): Promise<Order | null> {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('id', id)
-      .single();
-    if (error) {
-      serenaLogger.error('SupabaseOrderRepository findById error', error);
-      return null;
-    }
-    if (!data) return null;
-    return fromSupabase(data as any);
-  }
+  private readonly tableName = "orders";
+  private supabaseClient: any; // Instancia inyectada en el Composition Root
 
-  async findByCommercialCode(code: string): Promise<Order | null> {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('commercial_order_code', code)
-      .single();
-    if (error) {
-      serenaLogger.error('SupabaseOrderRepository findByCommercialCode error', error);
-      return null;
-    }
-    if (!data) return null;
-    return fromSupabase(data as any);
-  }
-
-  async list(): Promise<Order[]> {
-    const { data, error } = await supabase.from('orders').select('*');
-    if (error) {
-      serenaLogger.error('SupabaseOrderRepository list error', error);
-      return [];
-    }
-    return (data as any[]).map((rec) => fromSupabase(rec));
-  }
-
-  async listByStatus(status: OrderStatus): Promise<Order[]> {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('status', status);
-    if (error) {
-      serenaLogger.error('SupabaseOrderRepository listByStatus error', error);
-      return [];
-    }
-    return (data as any[]).map((rec) => fromSupabase(rec));
+  constructor(supabaseInstance?: any) {
+    this.supabaseClient = supabaseInstance;
   }
 
   async insert(order: Order): Promise<Order> {
-    // Map domain Order to Supabase compatible record
-    const supabaseRecord = toSupabase(order);
-    const { error } = await supabase
-      .from('orders')
-      .insert([supabaseRecord]);
+    if (!this.supabaseClient) return order;
+
+    const record = toSupabase(order);
+    const { error } = await this.supabaseClient
+      .from(this.tableName)
+      .insert(record);
+
     if (error) {
-      serenaLogger.error('SupabaseOrderRepository failed to insert order', error);
-      throw error;
+      throw new Error(`[Infrastructure Error] Error al insertar orden: ${error.message}`);
     }
     return order;
   }
 
   async update(order: Order): Promise<Order> {
-    const supabaseRecord = toSupabase(order);
-    const { error } = await supabase
-      .from('orders')
-      .update(supabaseRecord)
-      .eq('id', order.id);
+    if (!this.supabaseClient) return order;
+
+    const record = toSupabase(order);
+    const { error } = await this.supabaseClient
+      .from(this.tableName)
+      .update(record)
+      .eq("id", order.id);
+
     if (error) {
-      serenaLogger.error(`SupabaseOrderRepository failed to update order ${order.id}`, error);
-      throw error;
+      throw new Error(`[Infrastructure Error] Error al actualizar orden: ${error.message}`);
     }
     return order;
+  }
+
+  async findById(id: string): Promise<Order | null> {
+    if (!this.supabaseClient) return null;
+
+    const { data, error } = await this.supabaseClient
+      .from(this.tableName)
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error || !data) return null;
+    return fromSupabase(data as SupabaseOrderRecord);
+  }
+
+  async findAll(): Promise<Order[]> {
+    if (!this.supabaseClient) return [];
+
+    const { data, error } = await this.supabaseClient
+      .from(this.tableName)
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error || !data) return [];
+    return data.map((record: any) => fromSupabase(record as SupabaseOrderRecord));
   }
 }

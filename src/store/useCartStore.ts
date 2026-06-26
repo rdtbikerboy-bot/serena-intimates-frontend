@@ -1,10 +1,22 @@
+// src/store/useCartStore.ts
 "use client";
 
 import { create } from "zustand";
-import { CartItem } from "@/core/types";
 import { serenaLogger } from "@/core/logger";
 import { trackAddToCart, trackRemoveFromCart, trackClearCart } from "./useCartEvents";
 import { loadCart as persistLoadCart, saveCart as persistSaveCart, clearCartStorage as persistClearCartStorage } from "./cartPersistence";
+
+/**
+ * Estructura de Item del Carrito alineada con los tipos inmutables del Dominio de la Orden.
+ */
+export interface CartItem {
+  id: string; // ID del producto
+  title: string;
+  imageUrl: string;
+  size: string;
+  price: number;
+  quantity: number;
+}
 
 interface CartState {
   _hasHydrated: boolean;
@@ -16,6 +28,10 @@ interface CartState {
   getSubtotal: () => number;
 }
 
+/**
+ * Zustand Store: Gestión del estado global del Carrito de Compras en la UI.
+ * Totalmente desacoplado de bases de datos externas y sincronizado mediante el local storage.
+ */
 export const useCartStore = create<CartState>((set, get) => ({
   _hasHydrated: false,
   cartItems: [],
@@ -51,8 +67,8 @@ export const useCartStore = create<CartState>((set, get) => ({
     }
 
     set({ cartItems: nextItems });
-    serenaLogger.info(`Añadido al carro: ${item.title} (Talle ${size})`);
-    // Emit cart add event
+    serenaLogger.info(`[UI Store] Añadido al carro: ${item.title} (Talle ${size})`);
+
     trackAddToCart(item.id, undefined);
     persistSaveCart(get().cartItems);
   },
@@ -73,16 +89,16 @@ export const useCartStore = create<CartState>((set, get) => ({
     }
 
     set({ cartItems: nextItems });
-    serenaLogger.info(`Removido del carro: Look ID=${itemId} (Talle ${size})`);
-    // Emit cart remove event
+    serenaLogger.info(`[UI Store] Removido del carro: ID=${itemId} (Talle ${size})`);
+
     trackRemoveFromCart(itemId, undefined);
     persistSaveCart(get().cartItems);
   },
 
   clearCart: () => {
     set({ cartItems: [] });
-    serenaLogger.info("Carrito de compras vaciado completamente.");
-    // Emit cart clear event
+    serenaLogger.info("[UI Store] Carrito de compras vaciado completamente.");
+
     trackClearCart();
     persistClearCartStorage();
   },
