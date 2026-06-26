@@ -13,6 +13,8 @@ interface UIState {
   isEditorialOpen: boolean;
   isPasscodeOpen: boolean;
   isTurnoOpen: boolean; // Turnos de Showroom (Fase 20)
+  // New Express product state
+  expressProduct: Product | null;
   // New Checkout drawer state
   isCheckoutOpen: boolean;
 
@@ -35,6 +37,7 @@ interface UIState {
   setActiveStory: (story: any | null) => void;
   setSelectedProduct: (product: Product | null) => void;
   setSelectedSize: (size: string | null) => void;
+  setExpressProduct: (product: Product | null) => void;
 
   closeAllDrawers: () => void;
 }
@@ -54,6 +57,7 @@ export const useUIStore = create<UIState>((set) => ({
   activeStory: null,
   selectedProduct: null,
   selectedSize: null,
+  expressProduct: null,
 
   // setters
   setCartOpen: (open) => set({ isCartOpen: open }),
@@ -69,6 +73,7 @@ export const useUIStore = create<UIState>((set) => ({
   setActiveStory: (story) => set({ activeStory: story }),
   setSelectedProduct: (product) => set({ selectedProduct: product, selectedSize: null }),
   setSelectedSize: (size) => set({ selectedSize: size }),
+  setExpressProduct: (product) => set({ expressProduct: product }),
 
   closeAllDrawers: () =>
     set({
@@ -83,5 +88,6 @@ export const useUIStore = create<UIState>((set) => ({
       isCheckoutOpen: false,
       selectedProduct: null,
       activeStory: null,
+      expressProduct: null,
     }),
 }));

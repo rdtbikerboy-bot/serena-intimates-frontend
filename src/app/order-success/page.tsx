@@ -1,3 +1,5 @@
+import WhatsAppFallback from "./WhatsAppFallback";
+
 export const metadata = {
   title: "Pedido exitoso – Serena Intimates",
   description: "Confirmación del pedido completado con éxito."
@@ -15,6 +17,9 @@ export default async function OrderSuccessPage({ searchParams }: { searchParams:
       ) : (
         <p className="text-lg mb-2">Tu pedido se ha procesado correctamente.</p>
       )}
+      
+      <WhatsAppFallback />
+
       <a href="/" className="mt-4 text-serena-gold underline">
         Volver al inicio
       </a>

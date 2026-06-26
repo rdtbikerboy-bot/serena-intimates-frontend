@@ -1,78 +1,103 @@
 // src/infrastructure/order/order.mapper.ts
 
-/**
- * Mapper responsible for converting between the domain `Order` entity
- * and the plain object representation stored in Supabase.
- *
- * Supabase uses snake_case column names, while the domain model
- * uses camelCase. This mapper isolates that transformation.
- */
 import { Order } from '@/domain/order/order.entity';
-import { OrderStatus, Customer, OrderItem } from '@/domain/order/order.valueObjects';
+import { OrderStatus, OrderEvent, OrderItem } from '@/domain/order/order.valueObjects';
 
 /**
- * Plain JavaScript object that matches the `orders` table columns in Supabase.
+ * Representación relacional exacta en snake_case para la tabla `orders` de Supabase.
  */
 export type SupabaseOrderRecord = {
   id: string;
-  created_at: string; // ISO string
+  commercial_order_code: string;
+  created_at: string;
+  expires_at: string;
+  reserved_until: string;
+  future_cancellation_reason?: string;
   status: OrderStatus;
   customer_name: string;
   customer_phone: string;
   customer_address?: string;
   delivery_method: "delivery" | "pickup";
-  items: OrderItem[]; // stored as JSON array
+  items: OrderItem[];
   subtotal: number;
   total: number;
   currency: string;
+  confirmation_date?: string;
+  shipping_date?: string;
+  delivery_date?: string;
+  cancel_date?: string;
+  last_status_update?: string;
+  whatsapp_opened_date?: string;
+  timeline?: string; // Serialización estructurada JSON string de la colección OrderEvent[]
 };
 
-/** Convert a domain Order into a Supabase‑compatible record. */
+/**
+ * Mapeador de Infraestructura: Traduce la Entidad pura de Dominio a Registros Relacionales.
+ */
 export function toSupabase(order: Order): SupabaseOrderRecord {
-  const { id, createdAt, status, customer, items, subtotal, total, currency } = order;
   return {
-    id,
-    created_at: createdAt.toISOString(),
-    status,
-    customer_name: customer.name,
-    customer_phone: customer.phone,
-    customer_address: customer.address,
-    delivery_method: customer.deliveryMethod,
-    items,
-    subtotal,
-    total,
-    currency,
+    id: order.id,
+    commercial_order_code: order.commercialOrderCode,
+    created_at: order.createdAt.toISOString(),
+    expires_at: order.expiresAt.toISOString(),
+    reserved_until: order.reservedUntil.toISOString(),
+    future_cancellation_reason: order.futureCancellationReason,
+    status: order.status,
+    customer_name: order.customer.name,
+    customer_phone: order.customer.phone,
+    customer_address: order.customer.address,
+    delivery_method: order.customer.deliveryMethod,
+    items: order.items,
+    subtotal: order.subtotal,
+    total: order.total,
+    currency: order.currency,
+    confirmation_date: order.confirmationDate?.toISOString(),
+    shipping_date: order.shippingDate?.toISOString(),
+    delivery_date: order.deliveryDate?.toISOString(),
+    cancel_date: order.cancelDate?.toISOString(),
+    last_status_update: order.lastStatusUpdate?.toISOString(),
+    whatsapp_opened_date: order.whatsappOpenedDate?.toISOString(),
+    timeline: order.timeline && order.timeline.length > 0 ? JSON.stringify(order.timeline) : undefined,
   };
 }
 
-/** Convert a Supabase record back into the domain Order entity. */
+/**
+ * Mapeador de Infraestructura: Reconstruye de forma segura la Entidad de Dominio con su historial intacto.
+ */
 export function fromSupabase(record: SupabaseOrderRecord): Order {
-  const {
-    id,
-    created_at,
-    status,
-    customer_name,
-    customer_phone,
-    customer_address,
-    delivery_method,
-    items,
-    subtotal,
-    total,
-    currency,
-  } = record;
+  const parsedTimeline: OrderEvent[] = record.timeline
+    ? JSON.parse(record.timeline).map((e: any) => ({
+      status: e.status as OrderStatus,
+      timestamp: new Date(e.timestamp),
+      note: e.note,
+      origin: e.origin ?? "SYSTEM"
+    }))
+    : [];
+
   return new Order({
-    id,
-    createdAt: new Date(created_at),
-    status,
+    id: record.id,
+    commercialOrderCode: record.commercial_order_code,
+    createdAt: new Date(record.created_at),
+    expiresAt: new Date(record.expires_at),
+    reservedUntil: new Date(record.reserved_until),
+    futureCancellationReason: record.future_cancellation_reason,
+    status: record.status,
     customer: {
-      name: customer_name,
-      phone: customer_phone,
-      address: customer_address,
-      deliveryMethod: delivery_method,
+      name: record.customer_name,
+      phone: record.customer_phone,
+      address: record.customer_address,
+      deliveryMethod: record.delivery_method,
     },
-    items,
-    subtotal,
-    total,
-    currency,
+    items: record.items,
+    subtotal: record.subtotal,
+    total: record.total,
+    currency: record.currency,
+    confirmationDate: record.confirmation_date ? new Date(record.confirmation_date) : undefined,
+    shippingDate: record.shipping_date ? new Date(record.shipping_date) : undefined,
+    deliveryDate: record.delivery_date ? new Date(record.delivery_date) : undefined,
+    cancelDate: record.cancel_date ? new Date(record.cancel_date) : undefined,
+    lastStatusUpdate: record.last_status_update ? new Date(record.last_status_update) : undefined,
+    whatsappOpenedDate: record.whatsapp_opened_date ? new Date(record.whatsapp_opened_date) : undefined,
+    timeline: parsedTimeline,
   });
 }

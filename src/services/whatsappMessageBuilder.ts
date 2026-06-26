@@ -9,9 +9,11 @@
  * extending this module without touching the orchestrator.
  */
 export interface WhatsAppMessageParams {
+  orderId: string;
   name: string;
   phone: string;
-  city: string;
+  deliveryMethod: string;
+  address?: string;
   items: Array<{
     id: string;
     title: string;
@@ -19,23 +21,59 @@ export interface WhatsAppMessageParams {
     quantity: number;
     price: number;
   }>;
-  subtotal: number;
+  total: number;
 }
 
 export function buildWhatsAppMessage(params: WhatsAppMessageParams): string {
-  const { name, phone, city, items, subtotal } = params;
+  const { orderId, name, phone, deliveryMethod, address, items, total } = params;
   const lines: string[] = [];
-  lines.push("*¡Hola! 👋*\n");
-  lines.push("Quiero iniciar mi compra con los siguientes datos:");
-  lines.push(`*Nombre:* ${name}`);
-  lines.push(`*Teléfono:* ${phone}`);
-  lines.push(`*Ciudad:* ${city}`);
-  lines.push("\n*Productos:*\n");
+  
+  const separator = "━━━━━━━━━━━━━━━━━━";
+  const dateStr = new Date().toLocaleString("es-AR");
+
+  const totalProducts = items.length;
+  const totalUnits = items.reduce((acc, item) => acc + item.quantity, 0);
+
+  lines.push(separator);
+  lines.push("🌸 SERENA INTIMATES");
+  lines.push("Solicitud de compra");
+  lines.push(separator);
+  
+  lines.push("🛍 RESUMEN");
+  lines.push(`Cantidad de productos: ${totalProducts}`);
+  lines.push(`Cantidad total de unidades: ${totalUnits}`);
+  lines.push(separator);
+
+  lines.push("Detalle completo:\n");
   items.forEach((it) => {
-    const lineTotal = (it.price * it.quantity).toFixed(2);
-    lines.push(`- ${it.title} (talle ${it.size}) x${it.quantity}: $${lineTotal}`);
+    const lineTotal = (it.price * it.quantity).toLocaleString("es-AR");
+    lines.push(`• Producto: ${it.title}`);
+    lines.push(`• Talle: ${it.size}`);
+    lines.push(`• Cantidad: ${it.quantity}`);
+    lines.push(`• Precio: $${it.price.toLocaleString("es-AR")}`);
+    lines.push(`• Subtotal: $${lineTotal}\n`);
   });
-  lines.push(`\n*Subtotal:* $${subtotal.toFixed(2)}`);
-  lines.push("\nPor favor, indícame los pasos para completar la transferencia bancaria. Gracias!");
+
+  lines.push(separator);
+  lines.push(`💰 TOTAL: $${total.toLocaleString("es-AR")}`);
+  lines.push(separator);
+  lines.push(`🚚 Entrega: ${deliveryMethod === "pickup" ? "Retiro en sucursal" : "Envío a domicilio"}`);
+  lines.push(separator);
+  
+  if (address) {
+    lines.push("📍 Dirección completa:");
+    lines.push(address); // We don't have separate fields for locality/province/zip code yet, so just print the address string.
+    lines.push(separator);
+  }
+
+  lines.push(`👤 Cliente: ${name}`);
+  lines.push(`📱 Teléfono: ${phone}`);
+  lines.push(`🆔 Pedido Serena: ${orderId}`);
+  lines.push(`🟡 Estado:\nPendiente de Confirmación`);
+  lines.push(`🕒 Fecha: ${dateStr}`);
+  lines.push(`🌐 Origen Web: SERENA INTIMATES`);
+  lines.push(separator);
+  lines.push("Hola! Acabo de realizar este pedido desde la tienda SERENA INTIMATES y me gustaría coordinar el pago y la entrega. Muchas gracias ❤️");
+
   return lines.join("\n");
 }

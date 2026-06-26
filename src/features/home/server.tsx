@@ -1,4 +1,5 @@
-// src/features/home/server.tsx
+import HomeClient from "./client";
+
 
 export default function HomeFeature() {
   return <HomeClient />;

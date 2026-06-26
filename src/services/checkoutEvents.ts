@@ -22,6 +22,9 @@ export type CheckoutEventName =
   | "checkout_started"
   | "checkout_intent" // intent captured after validation (lead)
   | "checkout_failed_validation"
+  // Order creation events
+  | "order_created"
+  | "checkout_failed_order_creation"
   // WhatsApp interaction
   | "whatsapp_opening"
   | "whatsapp_opened"

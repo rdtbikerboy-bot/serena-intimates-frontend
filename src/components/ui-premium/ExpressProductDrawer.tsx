@@ -1,3 +1,4 @@
+"use client";
 // ExpressProductDrawer.tsx – Refactor completo
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Product, ProductImage } from "@/core/types";
