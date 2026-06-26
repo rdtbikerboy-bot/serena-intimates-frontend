@@ -1,13 +1,6 @@
 // src/services/whatsappMessageBuilder.ts
 "use client";
 
-/**
- * Build the WhatsApp pre‑filled message used in the assisted checkout flow.
- *
- * The function is deliberately pure – no side effects, just string formatting.
- * Future variants (different copy, emojis, localisation) can be added by
- * extending this module without touching the orchestrator.
- */
 export interface WhatsAppMessageParams {
   orderId: string;
   name: string;
@@ -24,56 +17,56 @@ export interface WhatsAppMessageParams {
   total: number;
 }
 
+/**
+ * Formateador Puro de Mensajes para el Enlace Asistido de WhatsApp.
+ * Genera una plantilla visualmente limpia y estructurada para facilitar el procesamiento al vendedor.
+ */
 export function buildWhatsAppMessage(params: WhatsAppMessageParams): string {
   const { orderId, name, phone, deliveryMethod, address, items, total } = params;
   const lines: string[] = [];
-  
-  const separator = "━━━━━━━━━━━━━━━━━━";
-  const dateStr = new Date().toLocaleString("es-AR");
+
+  const separator = "━━━━━━━━━━━━━━━━━━━━━━";
+  const dateStr = new Date().toLocaleString("es-AR", { timeZone: "America/Argentina/Salta" });
 
   const totalProducts = items.length;
   const totalUnits = items.reduce((acc, item) => acc + item.quantity, 0);
 
   lines.push(separator);
-  lines.push("🌸 SERENA INTIMATES");
-  lines.push("Solicitud de compra");
-  lines.push(separator);
-  
-  lines.push("🛍 RESUMEN");
-  lines.push(`Cantidad de productos: ${totalProducts}`);
-  lines.push(`Cantidad total de unidades: ${totalUnits}`);
+  lines.push("🌸 *SERENA INTIMATES* 🌸");
+  lines.push("       _Solicitud de Compra Web_");
   lines.push(separator);
 
-  lines.push("Detalle completo:\n");
+  lines.push("🛍️ *RESUMEN DEL PEDIDO*");
+  lines.push(`• Tipos de producto: ${totalProducts}`);
+  lines.push(`• Prendas totales: ${totalUnits}`);
+  lines.push(separator);
+
+  lines.push("*DETALLE COMPLETO:*");
   items.forEach((it) => {
     const lineTotal = (it.price * it.quantity).toLocaleString("es-AR");
-    lines.push(`• Producto: ${it.title}`);
-    lines.push(`• Talle: ${it.size}`);
-    lines.push(`• Cantidad: ${it.quantity}`);
-    lines.push(`• Precio: $${it.price.toLocaleString("es-AR")}`);
-    lines.push(`• Subtotal: $${lineTotal}\n`);
+    lines.push(`• *${it.title}*`);
+    lines.push(`  Talle: ${it.size} | Cantidad: ${it.quantity}`);
+    lines.push(`  Precio: $${it.price.toLocaleString("es-AR")} c/u`);
+    lines.push(`  Subtotal: $${lineTotal}\n`);
   });
 
   lines.push(separator);
-  lines.push(`💰 TOTAL: $${total.toLocaleString("es-AR")}`);
+  lines.push(`💰 *TOTAL A COORDINAR: $${total.toLocaleString("es-AR")}*`);
   lines.push(separator);
-  lines.push(`🚚 Entrega: ${deliveryMethod === "pickup" ? "Retiro en sucursal" : "Envío a domicilio"}`);
-  lines.push(separator);
-  
-  if (address) {
-    lines.push("📍 Dirección completa:");
-    lines.push(address); // We don't have separate fields for locality/province/zip code yet, so just print the address string.
-    lines.push(separator);
-  }
+  lines.push(`🚚 *Método de Entrega:* ${deliveryMethod === "pickup" ? "Retiro en Local" : "Envío a Domicilio"}`);
 
-  lines.push(`👤 Cliente: ${name}`);
-  lines.push(`📱 Teléfono: ${phone}`);
-  lines.push(`🆔 Pedido Serena: ${orderId}`);
-  lines.push(`🟡 Estado:\nPendiente de Confirmación`);
-  lines.push(`🕒 Fecha: ${dateStr}`);
-  lines.push(`🌐 Origen Web: SERENA INTIMATES`);
+  if (address && deliveryMethod !== "pickup") {
+    lines.push(`📍 *Dirección:* ${address}`);
+  }
   lines.push(separator);
-  lines.push("Hola! Acabo de realizar este pedido desde la tienda SERENA INTIMATES y me gustaría coordinar el pago y la entrega. Muchas gracias ❤️");
+
+  lines.push("👤 *DATOS DE LA CLIENTA:*");
+  lines.push(`• Nombre: ${name}`);
+  lines.push(`• Teléfono: ${phone}`);
+  lines.push(`• Código Único: \`${orderId}\``);
+  lines.push(`• Fecha de Solicitud: ${dateStr}`);
+  lines.push(separator);
+  lines.push("¡Hola! Acabo de realizar este pedido desde la tienda virtual de SERENA INTIMATES y me gustaría coordinar el pago y el método de entrega. Muchas gracias. ❤️");
 
   return lines.join("\n");
 }
